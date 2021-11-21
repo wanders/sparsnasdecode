@@ -1,0 +1,10 @@
+[package]
+name = "sparsnasdecode"
+version = "0.1.0"
+edition = "2021"
+authors = ["Anders Waldenborg <anders@0x63.nu>"]
+description = "Rust library for decoding messages sent by IKEA's sparsnas energy monitor"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/wanders/sparsnasdecode"
+
+[dependencies]
