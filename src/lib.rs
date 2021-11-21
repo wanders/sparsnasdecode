@@ -68,15 +68,22 @@ impl SparsnasDecoder {
             return Err(SparsnasDecodeError::BadLength);
         }
 
+        #[rustfmt::skip] // rustfmt makes _some_ of these single line
         let pkt = SparsnasPacket {
-            status: u16::from_be_bytes([data[3] ^ self.key[0], data[4] ^ self.key[1]]),
+            status: u16::from_be_bytes([
+		data[03] ^ self.key[0],
+		data[04] ^ self.key[1],
+	    ]),
             serial: u32::from_be_bytes([
-                data[5] ^ self.key[2],
-                data[6] ^ self.key[3],
-                data[7] ^ self.key[4],
-                data[8] ^ self.key[0],
+                data[05] ^ self.key[2],
+                data[06] ^ self.key[3],
+                data[07] ^ self.key[4],
+                data[08] ^ self.key[0],
             ]),
-            packet_seq: u16::from_be_bytes([data[9] ^ self.key[1], data[10] ^ self.key[2]]),
+            packet_seq: u16::from_be_bytes([
+		data[09] ^ self.key[1],
+		data[10] ^ self.key[2],
+	    ]),
             time_between_pulses: u16::from_be_bytes([
                 data[11] ^ self.key[3],
                 data[12] ^ self.key[4],
@@ -87,7 +94,9 @@ impl SparsnasDecoder {
                 data[15] ^ self.key[2],
                 data[16] ^ self.key[3],
             ]),
-            battery_percentage: data[17] ^ self.key[4],
+            battery_percentage: u8::from_be_bytes([
+		data[17] ^ self.key[4],
+	    ]),
         };
 
         if (pkt.packet_seq & 0x7f) as u8 != data[2] {
