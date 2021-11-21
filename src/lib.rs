@@ -62,44 +62,40 @@ impl SparsnasDecoder {
         }
     }
 
-    /// Decode a packet without CRC.
-    pub fn decode_nocrc(&self, data: &[u8; 18]) -> Result<SparsnasPacket, SparsnasDecodeError> {
-        if data[0] != 17 {
-            return Err(SparsnasDecodeError::BadLength);
-        }
-
+    /// Decode a packet without CRC and length.
+    pub fn decode_nocrclen(&self, data: &[u8; 17]) -> Result<SparsnasPacket, SparsnasDecodeError> {
         #[rustfmt::skip] // rustfmt makes _some_ of these single line
         let pkt = SparsnasPacket {
             status: u16::from_be_bytes([
-		data[03] ^ self.key[0],
-		data[04] ^ self.key[1],
+		data[02] ^ self.key[0],
+		data[03] ^ self.key[1],
 	    ]),
             serial: u32::from_be_bytes([
-                data[05] ^ self.key[2],
-                data[06] ^ self.key[3],
-                data[07] ^ self.key[4],
-                data[08] ^ self.key[0],
+                data[04] ^ self.key[2],
+                data[05] ^ self.key[3],
+                data[06] ^ self.key[4],
+                data[07] ^ self.key[0],
             ]),
             packet_seq: u16::from_be_bytes([
-		data[09] ^ self.key[1],
-		data[10] ^ self.key[2],
+		data[08] ^ self.key[1],
+		data[09] ^ self.key[2],
 	    ]),
             time_between_pulses: u16::from_be_bytes([
-                data[11] ^ self.key[3],
-                data[12] ^ self.key[4],
+                data[10] ^ self.key[3],
+                data[11] ^ self.key[4],
             ]),
             pulse_count: u32::from_be_bytes([
-                data[13] ^ self.key[0],
-                data[14] ^ self.key[1],
-                data[15] ^ self.key[2],
-                data[16] ^ self.key[3],
+                data[12] ^ self.key[0],
+                data[13] ^ self.key[1],
+                data[14] ^ self.key[2],
+                data[15] ^ self.key[3],
             ]),
             battery_percentage: u8::from_be_bytes([
-		data[17] ^ self.key[4],
+		data[16] ^ self.key[4],
 	    ]),
         };
 
-        if (pkt.packet_seq & 0x7f) as u8 != data[2] {
+        if (pkt.packet_seq & 0x7f) as u8 != data[1] {
             return Err(SparsnasDecodeError::BadPacketCount);
         }
 
@@ -110,7 +106,15 @@ impl SparsnasDecoder {
         Ok(pkt)
     }
 
-    /// Decode a packet. Expecting that the buffer contains a CRC at the end.
+    /// Decode a packet without CRC.
+    pub fn decode_nocrc(&self, data: &[u8; 18]) -> Result<SparsnasPacket, SparsnasDecodeError> {
+        if data[0] != 17 {
+            return Err(SparsnasDecodeError::BadLength);
+        }
+        self.decode_nocrclen(data[1..18].try_into().unwrap())
+    }
+
+    /// Decode a packet. Expecting that the buffer contains a length field in the beginning and CRC at the end.
     pub fn decode(&self, data: &[u8; 20]) -> Result<SparsnasPacket, SparsnasDecodeError> {
         let crc = ikeacrc::crc(&data[0..18]);
 
